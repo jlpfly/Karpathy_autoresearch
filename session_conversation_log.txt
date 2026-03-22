@@ -178,3 +178,44 @@ session. Store in Amy_Autoresearch branch.
 ## Branch: Amy_Autoresearch
 ## Based on: tiny_stores_test
 ## Repository: Karpathy_autoresearch (adapted fork)
+
+---
+
+## Turn 8 — March 2026 (Manus AI agent)
+
+**Task:** Revamp the presentation into an AI-themed deck focused on building a Pasquinelli Lab LLM agent. Review all READMEs, add LLM training guidance, and provide rich example prompts for Amy and postdocs.
+
+**Files modified:**
+- generate_pitch.py — Complete rewrite. New 15-slide AI-themed deck.
+
+**Files created:**
+- Pasquinelli_AI_Agent_Pitch.pptx — New 15-slide AI-themed presentation
+
+**Slide structure (new deck):**
+1. Title — "Your Lab's Own LLM: An AI Research Agent for miRNA Biology, Aging & RNA Processing"
+2. The Vision — what the LLM knows and what it means for the lab
+3. Architecture — three layers (Corpus, Model, Agent Loop)
+4. How to Build It — 5-step weekend setup guide with commands
+5. The Corpus — recommended corpus layers table (6 layers, priorities)
+6. Example Prompts (Amy/PI) — 4 strategic prompts with expected outputs
+7. Example Prompts (Postdocs) — 5 daily research prompts in 5-column layout
+8. Overnight Autonomous Research — 4 overnight tasks with expected morning outputs
+9. 5 Impactful Computational Applications (retained and restyled)
+10. Evidence Network — how the 5 experiments connect (flow table)
+11. The Field Is Moving — AI research systems comparison table (6 systems)
+12. RAG vs. Fine-Tuning — technical approach comparison table
+13. program.md Template — starter template code + explanation panel
+14. Quick Wins — this week vs. this month roadmap
+15. Closing — why this lab, what the agent amplifies/cannot replace + final quote
+
+**Design decisions:**
+- Expanded from 9 slides to 15 slides
+- AI neural-network aesthetic: deep navy (#0D0D1A), electric blue (#00B4FF), purple (#9B59B6), green (#00E676)
+- Vertical colored accent bars, panel backgrounds, divider lines for visual depth
+- All citations verified against pasquinellilab.biosci.ucsd.edu/publications/
+- Confirmed 2024 Hevolution Foundation grant for toxic RNAs in aging
+- Added dedicated LLM training/architecture slides (RAG vs. fine-tuning)
+- Added rich example prompts (Amy + postdoc + overnight tasks)
+- Added program.md template slide with starter code block
+
+**Branch:** Amy_Autoresearch
