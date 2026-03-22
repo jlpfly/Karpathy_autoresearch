@@ -8,6 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+.venv_old/
+.vscode/
 worktrees/
 results/
 queue/
@@ -18,6 +20,11 @@ AGENTS.md
 
 # Experimental code/artifacts
 dev/
+
+# Local diagnostics
+check_imports.py
+debug_dll.py
+debug_dll2.py
 
 # Results file
 results.tsv

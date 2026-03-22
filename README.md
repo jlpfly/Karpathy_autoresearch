@@ -18,26 +18,80 @@ By design, training runs for a **fixed 5-minute time budget** (wall clock, exclu
 
 If you are new to neural networks, this ["Dummy's Guide"](https://x.com/hooeem/status/2030720614752039185) looks pretty good for a lot more context.
 
-## Quick start
+## Windows setup and 5-minute validation on this laptop
 
-**Requirements:** A single NVIDIA GPU (tested on H100), Python 3.10+, [uv](https://docs.astral.sh/uv/).
+This working tree is currently tuned for the laptop I am using:
 
-```bash
+- Dell XPS 15 9520
+- Windows 10 Pro
+- Intel Core i9-12900HK
+- 64 GB RAM
+- NVIDIA GeForce RTX 3050 Ti Laptop GPU with 4 GB VRAM
 
-# 1. Install uv project manager (if you don't already have it)
-curl -LsSf https://astral.sh/uv/install.sh | sh
+Compared to the original H100-oriented defaults, the checked-in code has already been reduced for this machine:
 
-# 2. Install dependencies
-uv sync
+- Python is pinned to 3.11 in `.python-version`
+- `prepare.py` uses TinyStories and a 4096-token vocabulary
+- `MAX_SEQ_LEN=512` and `EVAL_TOKENS=10 * 65536`
+- `train.py` uses PyTorch SDPA, `DEPTH=4`, `HEAD_DIM=64`, `DEVICE_BATCH_SIZE=32`, and `TOTAL_BATCH_SIZE=2**15`
 
-# 3. Download data and train tokenizer (one-time, ~2 min)
-uv run prepare.py
+Use PowerShell in the repo root and follow these steps:
 
-# 4. Manually run a single training experiment (~5 min)
-uv run train.py
-```
+1. Confirm that Windows can see the NVIDIA GPU and driver:
 
-If the above commands all work ok, your setup is working and you can go into autonomous research mode.
+   ```powershell
+   nvidia-smi
+   ```
+
+   You should see the `NVIDIA GeForce RTX 3050 Ti Laptop GPU` and a working CUDA driver. If `nvidia-smi` fails, stop here and fix the NVIDIA driver first.
+
+2. Install `uv` if it is not already available:
+
+   ```powershell
+   winget install --id Astral-sh.uv -e
+   ```
+
+3. Install Python 3.11 through `uv` and create the project environment:
+
+   ```powershell
+   uv python install 3.11
+   uv sync
+   ```
+
+   On this laptop, `python` does not need to be on `PATH` as long as `uv` is installed. Use `uv run ...` for all repo commands.
+
+4. Run one-time data and tokenizer preparation:
+
+   ```powershell
+   uv run prepare.py
+   ```
+
+   This downloads 4 TinyStories training shards plus 1 validation shard into `%USERPROFILE%\.cache\autoresearch\data` and writes the tokenizer into `%USERPROFILE%\.cache\autoresearch\tokenizer`.
+
+5. Run the quick validation experiment:
+
+   ```powershell
+   uv run train.py
+   ```
+
+   On this laptop, the script will skip `torch.compile` automatically if Triton is unavailable on Windows and will continue in eager mode instead.
+
+   A successful run prints a live training line such as `step 00010 ... loss ... tok/sec ... remaining ...`, then ends with a summary block that includes:
+
+   - `val_bpb`
+   - `training_seconds: 300.x`
+   - `peak_vram_mb`
+   - `mfu_percent`
+
+   If the script prints `FAIL`, or if CUDA runs out of memory, the setup is not healthy yet.
+
+6. For later checks, you only need the training command again:
+
+   ```powershell
+   uv run train.py
+   ```
+
+If the preparation step and the 5-minute training run both complete, the laptop is ready for autonomous research mode.
 
 ## Running the agent
 
@@ -66,7 +120,7 @@ pyproject.toml  — dependencies
 
 ## Platform support
 
-This code currently requires that you have a single NVIDIA GPU. In principle it is quite possible to support CPU, MPS and other platforms but this would also bloat the code. I'm not 100% sure that I want to take this on personally right now. People can reference (or have their agents reference) the full/parent nanochat repository that has wider platform support and shows the various solutions (e.g. a Flash Attention 3 kernels fallback implementation, generic device support, autodetection, etc.), feel free to create forks or discussions for other platforms and I'm happy to link to them here in the README in some new notable forks section or etc.
+This code currently requires that you have a single NVIDIA GPU. The current checked-in defaults are tuned for a 4 GB RTX 3050 Ti laptop GPU on Windows, so they are intentionally smaller than the original H100-oriented settings. In principle it is quite possible to support CPU, MPS and other platforms but this would also bloat the code. I'm not 100% sure that I want to take this on personally right now. People can reference (or have their agents reference) the full/parent nanochat repository that has wider platform support and shows the various solutions (e.g. a Flash Attention 3 kernels fallback implementation, generic device support, autodetection, etc.), feel free to create forks or discussions for other platforms and I'm happy to link to them here in the README in some new notable forks section or etc.
 
 Seeing as there seems to be a lot of interest in tinkering with autoresearch on much smaller compute platforms than an H100, a few extra words. If you're going to try running autoresearch on smaller computers (Macbooks etc.), I'd recommend one of the forks below. On top of this, here are some recommendations for how to tune the defaults for much smaller models for aspiring forks:
 

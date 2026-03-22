@@ -27,9 +27,9 @@ import torch
 # Constants (fixed, do not modify)
 # ---------------------------------------------------------------------------
 
-MAX_SEQ_LEN = 2048       # context length
+MAX_SEQ_LEN = 512        # context length (reduced for RTX 3050)
 TIME_BUDGET = 300        # training time budget in seconds (5 minutes)
-EVAL_TOKENS = 40 * 524288  # number of tokens for val eval
+EVAL_TOKENS = 10 * 65536  # number of tokens for val eval (reduced for RTX 3050)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -38,11 +38,21 @@ EVAL_TOKENS = 40 * 524288  # number of tokens for val eval
 CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "autoresearch")
 DATA_DIR = os.path.join(CACHE_DIR, "data")
 TOKENIZER_DIR = os.path.join(CACHE_DIR, "tokenizer")
-BASE_URL = "https://huggingface.co/datasets/karpathy/climbmix-400b-shuffle/resolve/main"
-MAX_SHARD = 6542 # the last datashard is shard_06542.parquet
-VAL_SHARD = MAX_SHARD  # pinned validation shard (shard_06542)
+
+# TinyStories dataset (roneneldan/TinyStories on HuggingFace)
+# 4 train shards + 1 validation shard, stored locally as shard_NNNNN.parquet
+_TINY_STORIES_BASE = "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/data"
+_TINY_STORIES_FILES = [
+    "train-00000-of-00004-2d5a1467fff1081b.parquet",
+    "train-00001-of-00004-5852b56a2bd28fd9.parquet",
+    "train-00002-of-00004-a26307300439e943.parquet",
+    "train-00003-of-00004-d243063613e5a057.parquet",
+    "validation-00000-of-00001-869c898b519ad725.parquet",  # VAL_SHARD
+]
+MAX_SHARD = 4    # train shards: indices 0-3
+VAL_SHARD = 4    # validation shard: index 4
 VAL_FILENAME = f"shard_{VAL_SHARD:05d}.parquet"
-VOCAB_SIZE = 8192
+VOCAB_SIZE = 4096
 
 # BPE split pattern (GPT-4 style, with \p{N}{1,2} instead of {1,3})
 SPLIT_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,2}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
@@ -61,7 +71,7 @@ def download_single_shard(index):
     if os.path.exists(filepath):
         return True
 
-    url = f"{BASE_URL}/{filename}"
+    url = f"{_TINY_STORIES_BASE}/{_TINY_STORIES_FILES[index]}"
     max_attempts = 5
     for attempt in range(1, max_attempts + 1):
         try:
@@ -370,7 +380,7 @@ def evaluate_bpb(model, tokenizer, batch_size):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare data and tokenizer for autoresearch")
-    parser.add_argument("--num-shards", type=int, default=10, help="Number of training shards to download (-1 = all). Val shard is always pinned.")
+    parser.add_argument("--num-shards", type=int, default=4, help="Number of training shards to download (-1 = all). Val shard is always pinned.")
     parser.add_argument("--download-workers", type=int, default=8, help="Number of parallel download workers")
     args = parser.parse_args()
 
