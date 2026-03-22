@@ -1,0 +1,180 @@
+# Session Conversation Log
+# Autoresearch for Pasquinelli Lab — Amy_Autoresearch Branch
+# Date: March 22, 2026
+
+## Session Overview
+
+This file records the key actions and decisions made during the Copilot CLI
+session that produced the Amy_Autoresearch branch contents.
+
+---
+
+## Turn 1: Initial setup and README creation
+
+**User request:** Create a README for step-by-step setup and test of this repo
+on the current laptop. Review laptop specs, check git changes, commit if
+acceptable, and run a 5-minute test.
+
+**Actions taken:**
+- Inspected repo structure: pyproject.toml, train.py, prepare.py, program.md
+- Detected laptop: Dell XPS 15 9520, RTX 3050 Ti (4GB VRAM), 64GB RAM, Windows 10
+- Ran code review: identified stale `kernels` dependency, local debug files
+- Updated .gitignore to exclude .venv_old/, .vscode/, debug scripts
+- Removed `kernels` dependency from pyproject.toml
+- Created README.md with Windows/XPS 15 setup flow
+- Ran CUDA/SDPA smoke test: torch 2.9.1+cu128, RTX 3050 Ti detected
+- Ran `uv run prepare.py`: downloaded TinyStories data, trained tokenizer
+- First `uv run train.py` failed: TritonMissing error on Windows
+- Fixed by adding torch.compile disable for Windows in train.py
+- Second run succeeded: val_bpb achieved, 5-minute budget completed
+
+## Turn 2: Training output explainer markdown
+
+**User request:** Create a markdown file explaining training output in
+layman's terms with a "dummies speak" row below each column.
+
+**Actions taken:**
+- Created TRAINING_OUTPUT_EXPLAINED.md with plain-English explanations
+- Covered: step, done%, loss, lrm, dt, tok/sec, mfu, epoch, remaining
+- Added startup block explanation (parameter counts, FLOPs, compile messages)
+- Added final scorecard explanation (val_bpb, training_seconds, peak_vram_mb)
+
+## Turn 3: Two-line terminal display
+
+**User request:** Add a second line during training shown on the terminal
+below name:value as an explainer word (e.g., "dt: 294ms" → "Time for 1 study").
+
+**Actions taken:**
+- Modified train.py to print a second "explainer" line below each progress line
+- Explainer terms: study round, run done, wrongness, learning pace,
+  time for 1 study, text speed, GPU busy, data lap, time left
+- Used \r and cursor movement to keep both lines updating in place
+
+## Turn 4: NSP2 autoresearch playbook
+
+**User request:** Combine training output explanation with updates. Build a
+README with 10 examples for deploying autoresearch for the NSP2/miRNA
+translational repression paper (Naeli et al., J Cell Sci, 2023).
+
+**Actions taken:**
+- Reviewed the paper via DOI, PubMed, and PMC full text
+- Created NSP2_AUTORESEARCH_README.md with:
+  - Plain-English paper summary
+  - Updated terminal output documentation
+  - 10 safe deployment examples (literature triage, figure extraction,
+    miRNA family prioritization, host-target ranking, translation vs. mRNA
+    effect classifier, cell-line comparison, replication checklist, public
+    dataset queue, variant monitoring, living evidence dashboard)
+
+## Turn 5: Pasquinelli Lab autoresearch playbook
+
+**User request:** Create a README for Amy Pasquinelli's lab. Review
+publications from https://pasquinellilab.biosci.ucsd.edu/publications/.
+Focus on 2020+ but include high-impact older studies. Provide 10 computational
+deployment examples.
+
+**Actions taken:**
+- Reviewed publications page and individual paper pages
+- Created PASQUINELLI_AUTORESEARCH_README.md with:
+  - Publication review (2024 direct RNA-seq, 2023 miR-238, 2022 reviews,
+    2021 heat-shock recovery, 2020 TIR1 method paper)
+  - High-impact older studies (2000 Nature let-7, 2001 Science Dicer,
+    2012 NRG review)
+  - 10 computational deployment examples
+  - Safe usage guidance and prompt directions
+
+## Turn 6: Expanded Pasquinelli playbook with dataset applications and field evidence
+
+**User request:** Add 5 impactful dataset-access applications, 5 starter
+models for post-docs/PI, and review current autoresearch applications in
+biology/science with PI citations.
+
+**Actions taken:**
+- Researched: Karpathy autoresearch forks, Sakana AI Scientist v1/v2,
+  FutureHouse PaperQA2/ContraCrow/WikiCrow, Coscientist (Nature 2023),
+  ResearchAgent (NAACL 2025), STOP (COLM 2024)
+- Added 5 impactful applications:
+  1. Age-dependent isoform shift quantification
+  2. Cross-dataset miRNA target concordance scoring
+  3. Poly(A)-tail length and translation efficiency integration
+  4. Stress-recovery time-series gene module detection
+  5. Automated cross-dataset replication of aging signatures
+- Added 5 starter models for post-docs/PI:
+  1. Literature gap-finder for grants
+  2. New-paper alert service
+  3. Figure legend / methods cross-checker
+  4. Hypothesis ranking board from seed paper
+  5. Reusable lab knowledge base
+- Added field evidence section with PI table:
+  Karpathy, White, Rodriques, Gomes, Ha/Jones, Collins, Coley
+- Committed to tiny_stores_test branch
+
+## Turn 7: Full restructure and presentation (current session)
+
+**User request:** Remove 10 easy deployments to separate file. Move 5
+impactful applications to top with collaborators. Move publications to bottom.
+Create PowerPoint pitch. Create 5 individual how-to markdown files. Record
+session. Store in Amy_Autoresearch branch.
+
+**Actions taken:**
+- Switched to Amy_Autoresearch branch
+- Created PASQUINELLI_10_BASIC_DEPLOYMENTS.md (extracted 10 deployments)
+- Created amy_autoresearch_howto/ directory with 5 how-to guides:
+  01_isoform_shift_quantification.md
+  02_mirna_target_concordance.md
+  03_polya_translation_integration.md
+  04_stress_recovery_modules.md
+  05_cross_dataset_replication.md
+  Each includes: what it does, why it matters, anchor paper, potential
+  collaborators, prerequisites, step-by-step setup, program.md config,
+  starter Python script, expected outputs, success criteria, next steps
+- Restructured PASQUINELLI_AUTORESEARCH_README.md:
+  - 5 impactful applications with collaborators at top
+  - Experiment connection diagram
+  - 5 starter models section
+  - Field evidence section
+  - Link to separated 10 basic deployments
+  - Publication reviews moved to bottom
+- Created generate_pitch.py → Pasquinelli_Autoresearch_Pitch.pptx
+  9-slide dark-themed pitch deck:
+  1. Title slide
+  2. Why Autoresearch for Biology? (challenge vs. solution)
+  3-7. One slide per impactful application (what/why/outputs/anchor/collaborators/howto)
+  8. How the 5 experiments connect (flow diagram)
+  9. Getting started today (quick wins + field evidence)
+- Created this session log file
+- Committed all files to Amy_Autoresearch branch
+
+---
+
+## Files created or modified in this session
+
+### New files:
+- PASQUINELLI_10_BASIC_DEPLOYMENTS.md
+- amy_autoresearch_howto/01_isoform_shift_quantification.md
+- amy_autoresearch_howto/02_mirna_target_concordance.md
+- amy_autoresearch_howto/03_polya_translation_integration.md
+- amy_autoresearch_howto/04_stress_recovery_modules.md
+- amy_autoresearch_howto/05_cross_dataset_replication.md
+- generate_pitch.py
+- Pasquinelli_Autoresearch_Pitch.pptx
+- session_conversation_log.txt (this file)
+
+### Modified files:
+- PASQUINELLI_AUTORESEARCH_README.md (restructured)
+- pyproject.toml (added python-pptx dependency)
+- uv.lock (updated with python-pptx)
+
+### Previously created files (earlier sessions):
+- README.md
+- TRAINING_OUTPUT_EXPLAINED.md
+- NSP2_AUTORESEARCH_README.md
+- Creation_Prompt.md
+- train.py (modified for Windows/RTX 3050 compatibility)
+- .gitignore (updated)
+
+---
+
+## Branch: Amy_Autoresearch
+## Based on: tiny_stores_test
+## Repository: Karpathy_autoresearch (adapted fork)
