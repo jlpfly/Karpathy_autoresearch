@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pasquinelli Lab AI Research Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Source+Code+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;scroll-snap-type:y mandatory;}
+body{background:#08101A;color:#fff;font-family:'Inter',sans-serif;overflow-x:hidden;}
+a{color:inherit;text-decoration:none;}
+
+/* ── Colour tokens ────────────────────────────────────────────────────── */
+:root{
+  --brass:#C87941;--brassL:#E8A860;--brassD:#7A4218;
+  --blue:#00B4FF;--purple:#9B59B6;--green:#00D46A;
+  --teal:#1ABC9C;--orange:#FF8C00;--gold:#F1C40F;
+  --lgray:#CCCCCC;--mgray:#888899;--panel:#0E1A26;
+}
+
+/* ── Slide system ─────────────────────────────────────────────────────── */
+.slide{
+  scroll-snap-align:start;
+  height:100vh;min-height:600px;
+  position:relative;overflow:hidden;
+  background:#08101A;
+  display:flex;flex-direction:column;
+}
+
+/* ── Steampunk chrome ─────────────────────────────────────────────────── */
+.brass-border{position:absolute;inset:0;border:3px solid var(--brass);pointer-events:none;z-index:10;}
+.bar-left{position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--brass);z-index:5;}
+.bar-accent{position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--brassD);z-index:5;}
+
+.border-top,.border-bot{
+  position:absolute;left:0;right:0;height:32px;z-index:8;
+  background-image:url('https://d2xsxph8kpxj0f.cloudfront.net/310519663390872577/63nwY9EDGcmn5XgTaSziVz/border_strip_1198ccbc.png');
+  background-size:cover;background-position:center;
+}
+.border-top{top:0;}
+.border-bot{bottom:0;height:40px;}
+
+.gear-tl{
+  position:absolute;top:-8px;left:-8px;width:180px;height:180px;z-index:9;
+  background:url('https://d2xsxph8kpxj0f.cloudfront.net/310519663390872577/63nwY9EDGcmn5XgTaSziVz/gear_corner_tl_t_a42fb13c.png') no-repeat top left/contain;
+  animation:gspin 60s linear infinite;opacity:.9;
+}
+.gear-br{
+  position:absolute;bottom:-8px;right:-8px;width:180px;height:180px;z-index:9;
+  background:url('https://d2xsxph8kpxj0f.cloudfront.net/310519663390872577/63nwY9EDGcmn5XgTaSziVz/gear_corner_br_t_87ef2692.png') no-repeat bottom right/contain;
+  animation:grev 80s linear infinite;opacity:.9;
+}
+.gear-sm{
+  display:inline-block;width:36px;height:36px;flex-shrink:0;
+  background:url('https://d2xsxph8kpxj0f.cloudfront.net/310519663390872577/63nwY9EDGcmn5XgTaSziVz/gear_cluster_sm_t_c50a3260.png') no-repeat center/contain;
+  animation:gspin 20s linear infinite;
+}
+.clockface{
+  background:url('https://d2xsxph8kpxj0f.cloudfront.net/310519663390872577/63nwY9EDGcmn5XgTaSziVz/clockface_t_63c7e303.png') no-repeat center/contain;
+}
+.divider{
+  width:100%;height:26px;
+  background:url('https://d2xsxph8kpxj0f.cloudfront.net/310519663390872577/63nwY9EDGcmn5XgTaSziVz/divider_ornament_955bb0c5.png') repeat-x center/contain;
+  margin:6px 0;
+}
+
+.rivets{display:flex;justify-content:space-around;padding:0 8px;}
+.rivet{width:10px;height:10px;border-radius:50%;background:var(--brassD);}
+
+/* ── Content wrapper ──────────────────────────────────────────────────── */
+.content{
+  position:relative;z-index:20;
+  flex:1;display:flex;flex-direction:column;
+  padding:50px 20px 56px 20px;
+  overflow:hidden;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.slide-footer{
+  position:absolute;bottom:42px;left:0;right:0;z-index:20;
+  text-align:center;font-size:9px;color:var(--mgray);letter-spacing:.05em;
+}
+
+/* ── Typography ───────────────────────────────────────────────────────── */
+.label{font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--brassL);}
+.title{font-family:'Cinzel',serif;font-size:clamp(16px,2.2vw,26px);font-weight:700;color:#fff;line-height:1.25;margin-bottom:4px;}
+.title-lg{font-family:'Cinzel',serif;font-size:clamp(26px,3.8vw,50px);font-weight:900;color:#fff;line-height:1.1;}
+.prompt{font-family:'Inter',sans-serif;font-style:italic;color:var(--blue);font-size:clamp(11px,1.05vw,13px);line-height:1.5;}
+.body-text{font-family:'Inter',sans-serif;color:var(--lgray);font-size:clamp(10px,.92vw,11.5px);line-height:1.45;}
+.code{
+  font-family:'Source Code Pro',monospace;font-size:clamp(9px,.82vw,10.5px);line-height:1.6;
+  color:var(--lgray);background:rgba(0,0,0,.35);border:1px solid var(--brassD);
+  padding:10px 14px;white-space:pre-wrap;
+}
+.callout{
+  background:rgba(20,36,50,.9);border-top:1px solid var(--brassD);border-bottom:1px solid var(--brassD);
+  padding:7px 18px;font-family:'Cinzel',serif;font-size:clamp(9px,.95vw,11.5px);
+  color:var(--gold);font-weight:600;text-align:center;margin-top:8px;
+}
+
+/* ── Panel ────────────────────────────────────────────────────────────── */
+.panel{background:var(--panel);border:1px solid var(--brassD);padding:10px 12px;transition:border-color .25s,box-shadow .25s;}
+.panel:hover{border-color:var(--brass);box-shadow:0 0 14px rgba(200,121,65,.2);}
+.panel-hdr{background:var(--brassD);padding:5px 12px;border-bottom:1px solid var(--brass);margin:-10px -12px 8px;
+  font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brassL);}
+
+/* ── Grid helpers ─────────────────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;flex:1;min-height:0;}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;flex:1;min-height:0;}
+.flex-row{display:flex;gap:10px;flex:1;min-height:0;}
+.flex-col{display:flex;flex-direction:column;flex:1;min-height:0;}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;}
+th{background:var(--brassD);color:var(--brassL);font-family:'Cinzel',serif;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:7px 10px;text-align:left;border-bottom:1px solid var(--brass);}
+td{padding:6px 10px;font-size:11px;line-height:1.4;border-bottom:1px solid rgba(122,66,24,.3);}
+tr:nth-child(even) td{background:rgba(14,26,38,.6);}
+tr:nth-child(odd)  td{background:rgba(8,16,26,.4);}
+
+/* ── Slide navigator ──────────────────────────────────────────────────── */
+#nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:7px;}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--brassD);border:1px solid var(--brass);cursor:pointer;transition:all .2s;position:relative;}
+.dot:hover,.dot.active{background:var(--brass);box-shadow:0 0 8px rgba(200,121,65,.6);transform:scale(1.4);}
+.dot .tip{position:absolute;right:18px;top:50%;transform:translateY(-50%);background:var(--panel);border:1px solid var(--brass);color:var(--brassL);font-family:'Cinzel',serif;font-size:9px;letter-spacing:.08em;padding:3px 7px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;}
+.dot:hover .tip{opacity:1;}
+
+/* ── Animations ───────────────────────────────────────────────────────── */
+@keyframes gspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes grev {from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bpulse{0%,100%{box-shadow:0 0 8px rgba(200,121,65,.3)}50%{box-shadow:0 0 20px rgba(200,121,65,.6)}}
+.fu{animation:fadeUp .5s ease both;}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}
+.d4{animation-delay:.4s}.d5{animation-delay:.5s}.d6{animation-delay:.6s}
+.bpulse{animation:bpulse 3s ease-in-out infinite;}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:#08101A;}
+::-webkit-scrollbar-thumb{background:var(--brassD);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--brass);}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .grid3{grid-template-columns:1fr;}
+  .grid5{grid-template-columns:1fr 1fr;}
+  .gear-tl,.gear-br{width:100px;height:100px;}
+  #nav{display:none;}
+}
+@media(max-width:600px){
+  .grid2,.grid5{grid-template-columns:1fr;}
+  .title-lg{font-size:22px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── SLIDE NAVIGATOR ───────────────────────────────────────────────────── -->
+<nav id="nav" aria-label="Slide navigation"></nav>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 01 — TITLE
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s01">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;">
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+  </div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;">
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+  </div>
+  <div class="content">
+    <div class="flex-row" style="align-items:center;">
+      <div class="flex-col" style="justify-content:center;padding-right:20px;">
+        <p class="label fu" style="margin-bottom:12px;">PASQUINELLI LAB · UC SAN DIEGO · DEPARTMENT OF MOLECULAR BIOLOGY</p>
+        <h1 class="title-lg fu d1" style="margin-bottom:8px;">Your Lab's Own LLM:</h1>
+        <h2 class="fu d2" style="font-family:'Cinzel',serif;font-size:clamp(14px,1.8vw,22px);color:var(--brassL);font-weight:400;margin-bottom:14px;">
+          An AI Research Agent for miRNA Biology,<br>Aging &amp; RNA Processing
+        </h2>
+        <div class="divider fu d3"></div>
+        <p class="body-text fu d4" style="margin-bottom:5px;">Built on Karpathy's autoresearch framework · Amy_Autoresearch branch</p>
+        <p class="body-text fu d4" style="color:var(--mgray);margin-bottom:4px;">github.com/jlpfly/Karpathy_autoresearch · Dell XPS 15 (RTX 3050 Ti)</p>
+        <p class="body-text fu d4" style="color:var(--mgray);">Training corpus: 25 years of Pasquinelli lab publications + the full miRNA field</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:16px;" class="fu d5">
+          <div class="gear-sm"></div>
+          <p style="font-size:11px;color:var(--brassD);">Autoresearch · RAG · Fine-Tuning · Autonomous Agent Loop · miRNA Biology · C. elegans Aging</p>
+        </div>
+      </div>
+      <div style="flex-shrink:0;width:260px;display:flex;align-items:center;justify-content:center;">
+        <div class="clockface bpulse fu d6" style="width:240px;height:240px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 02 — THE VISION
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s02" style="--bar-col:var(--purple);">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--purple);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">The Vision</p>
+    <h2 class="title" style="margin-bottom:2px;">Imagine an AI that has read every paper your lab has ever published</h2>
+    <div class="divider"></div>
+    <div class="grid2" style="margin-top:4px;">
+      <div class="panel">
+        <div class="panel-hdr">What this LLM knows</div>
+        <p class="body-text" style="margin-bottom:7px;">• Every Pasquinelli lab paper from let-7 (2000) through the 2024 aging RNA-seq study</p>
+        <p class="body-text" style="margin-bottom:7px;">• Full miRNA field: TargetScan, miRDB, AGO biology, CLIP/CLASH datasets</p>
+        <p class="body-text" style="margin-bottom:7px;">• C. elegans aging literature, heat-shock recovery, poly(A) tail biology</p>
+        <p class="body-text">• Unpublished datasets, protocols, and experimental notes (optional)</p>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr" style="color:var(--green);">What this means for the lab</div>
+        <p class="prompt" style="margin-bottom:3px;">"What are the strongest open questions in let-7 biology right now?"</p>
+        <p class="body-text" style="margin-left:12px;margin-bottom:8px;">→ Amy, strategic planning</p>
+        <p class="prompt" style="margin-bottom:3px;">"Design a follow-up experiment for our miR-238 longevity finding."</p>
+        <p class="body-text" style="margin-left:12px;margin-bottom:8px;">→ Postdoc, experimental design</p>
+        <p class="prompt" style="margin-bottom:3px;">"Explain the ALG-1 vs ALG-2 aging phenotype to me."</p>
+        <p class="body-text" style="margin-left:12px;margin-bottom:8px;">→ Rotation student, onboarding</p>
+        <p class="prompt" style="margin-bottom:3px;">"What gaps in the aging-miRNA field should our R01 address?"</p>
+        <p class="body-text" style="margin-left:12px;">→ Grant writing, Significance section</p>
+      </div>
+    </div>
+    <div class="callout">This is not a generic chatbot. It is trained specifically on the body of work most relevant to your research program.</div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 03 — ARCHITECTURE
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s03">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--teal);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">Architecture</p>
+    <h2 class="title" style="margin-bottom:2px;">Three layers make this agent work: Corpus · Model · Agent Loop</h2>
+    <div class="divider"></div>
+    <div class="grid3" style="margin-top:4px;">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);">LAYER 1</span>
+          <div class="gear-sm"></div>
+        </div>
+        <h3 style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:2px;">The Corpus</h3>
+        <p class="body-text" style="color:var(--mgray);margin-bottom:8px;">What it reads</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:8px;">
+        <p class="body-text" style="margin-bottom:6px;">• All Pasquinelli lab papers (2000–2025): ~55 papers</p>
+        <p class="body-text" style="margin-bottom:6px;">• Field-defining papers: Bartel, Ambros, Tuschl labs</p>
+        <p class="body-text" style="margin-bottom:6px;">• PubMed abstracts, PMC full text, GEO metadata</p>
+        <p class="body-text">• Lab protocols, grant aims, meeting notes (optional)</p>
+      </div>
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--purple);">LAYER 2</span>
+          <div class="gear-sm"></div>
+        </div>
+        <h3 style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:2px;">The Model</h3>
+        <p class="body-text" style="color:var(--mgray);margin-bottom:8px;">How it learns</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:8px;">
+        <p class="body-text" style="margin-bottom:6px;">• Base: Llama 3, Mistral, or GPT-4 via API</p>
+        <p class="body-text" style="margin-bottom:6px;">• Method: RAG or supervised fine-tuning on corpus</p>
+        <p class="body-text" style="margin-bottom:6px;">• Hardware: RTX 3050 Ti (already in the lab)</p>
+        <p class="body-text">• Time to first version: 1–2 days setup + overnight</p>
+      </div>
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--green);">LAYER 3</span>
+          <div class="gear-sm"></div>
+        </div>
+        <h3 style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:2px;">The Agent Loop</h3>
+        <p class="body-text" style="color:var(--mgray);margin-bottom:8px;">How it acts</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:8px;">
+        <p class="body-text" style="margin-bottom:6px;">• Reads program.md (your research strategy)</p>
+        <p class="body-text" style="margin-bottom:6px;">• Iterates: reads → extracts → hypothesizes → ranks</p>
+        <p class="body-text" style="margin-bottom:6px;">• Outputs: tables, hypothesis boards, reading queues</p>
+        <p class="body-text">• Human stays in control: review, redirect, refine</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 04 — HOW TO BUILD IT
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s04">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--green);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">How to Build It</p>
+    <h2 class="title" style="margin-bottom:2px;">Building the Pasquinelli Lab LLM takes one weekend, not one year</h2>
+    <div class="divider"></div>
+    <div class="grid5" style="margin-top:4px;">
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:22px;font-weight:900;color:var(--blue);">01</span>
+          <div class="gear-sm"></div>
+        </div>
+        <p style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Set up the environment</p>
+        <p class="body-text" style="color:var(--brassL);font-size:10px;margin-bottom:6px;">Day 1 · ~2 hours</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:7px;">
+        <pre class="code" style="flex:1;">git clone https://github.com/jlpfly/
+Karpathy_autoresearch
+git checkout Amy_Autoresearch
+uv python install 3.11
+uv sync
+uv run prepare.py
+
+Hardware: Dell XPS 15
+RTX 3050 Ti — validated</pre>
+      </div>
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:22px;font-weight:900;color:var(--purple);">02</span>
+          <div class="gear-sm"></div>
+        </div>
+        <p style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Build the corpus</p>
+        <p class="body-text" style="color:var(--brassL);font-size:10px;margin-bottom:6px;">Day 1 · ~3 hours</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:7px;">
+        <pre class="code" style="flex:1;">Export PDFs from
+PubMed/PMC for all
+Pasquinelli lab papers
+
+Add key field papers
+(Bartel, Ambros,
+let-7 foundational)
+
+pdftotext paper.pdf \
+  paper.txt
+
+Place in corpus/</pre>
+      </div>
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:22px;font-weight:900;color:var(--teal);">03</span>
+          <div class="gear-sm"></div>
+        </div>
+        <p style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Configure the agent</p>
+        <p class="body-text" style="color:var(--brassL);font-size:10px;margin-bottom:6px;">Day 1 · ~1 hour</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:7px;">
+        <pre class="code" style="flex:1;">Edit program.md to
+define agent's role
+
+Set focus:
+"You are a research
+assistant for the
+Pasquinelli Lab…"
+
+Define output format:
+tables, ranked lists,
+hypothesis boards</pre>
+      </div>
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:22px;font-weight:900;color:var(--orange);">04</span>
+          <div class="gear-sm"></div>
+        </div>
+        <p style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Run overnight</p>
+        <p class="body-text" style="color:var(--brassL);font-size:10px;margin-bottom:6px;">Day 2</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:7px;">
+        <pre class="code" style="flex:1;">uv run train.py
+# 5-min validation
+
+Launch Claude/Codex
+with program.md —
+let it iterate
+
+Wake up to a log of
+experiments and
+structured outputs</pre>
+      </div>
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:'Cinzel',serif;font-size:22px;font-weight:900;color:var(--green);">05</span>
+          <div class="gear-sm"></div>
+        </div>
+        <p style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Query and iterate</p>
+        <p class="body-text" style="color:var(--brassL);font-size:10px;margin-bottom:6px;">Ongoing</p>
+        <hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:7px;">
+        <pre class="code" style="flex:1;">Start asking questions
+(see prompt slides)
+
+Refine program.md
+based on output quality
+
+Add new papers as
+they are published</pre>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 05 — THE CORPUS
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s05">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--orange);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">The Corpus</p>
+    <h2 class="title" style="margin-bottom:2px;">The quality of the corpus determines the quality of the intelligence</h2>
+    <div class="divider"></div>
+    <div style="flex:1;overflow:auto;margin-top:4px;">
+      <table>
+        <thead><tr><th>Layer</th><th>Content</th><th>Papers / Items</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--green);">Core Lab</span></td><td style="color:#fff;">All Pasquinelli lab publications 2000–2025</td><td style="text-align:center;color:var(--lgray);">~55 papers</td><td style="text-align:center;font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--green);">Essential</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--green);">Field Foundation</span></td><td style="color:#fff;">Bartel, Ambros, Tuschl landmark miRNA papers</td><td style="text-align:center;color:var(--lgray);">~30 papers</td><td style="text-align:center;font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--green);">Essential</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--blue);">Aging &amp; C. elegans</span></td><td style="color:#fff;">Kaeberlein, Murphy, Curran aging papers</td><td style="text-align:center;color:var(--lgray);">~20 papers</td><td style="text-align:center;font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--blue);">High</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--blue);">Poly(A) &amp; Translation</span></td><td style="color:#fff;">Richter, Gilbert, Wickens PABP/translation papers</td><td style="text-align:center;color:var(--lgray);">~15 papers</td><td style="text-align:center;font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--blue);">High</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--teal);">Databases</span></td><td style="color:#fff;">TargetScan, miRDB, CLIP-seq datasets (metadata)</td><td style="text-align:center;color:var(--lgray);">~5 sources</td><td style="text-align:center;font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--teal);">Medium</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--mgray);">Lab Materials</span></td><td style="color:#fff;">Protocols, grant aims, meeting notes</td><td style="text-align:center;color:var(--lgray);">Variable</td><td style="text-align:center;font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--mgray);">Optional</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">Key principle: Start with the lab's own papers. The agent will already be more useful than a generic LLM after just this first layer.</div>
+    <p style="text-align:center;font-size:10px;color:var(--mgray);margin-top:5px;">Sources: PubMed Central (pmc.ncbi.nlm.nih.gov) · Semantic Scholar API · bioRxiv preprints</p>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 06 — AMY'S PROMPTS
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s06">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--blue);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">Example Prompts — Amy Pasquinelli (PI)</p>
+    <h2 class="title" style="margin-bottom:2px;">Strategic questions that used to take days to answer</h2>
+    <div class="divider"></div>
+    <div class="grid2" style="margin-top:4px;">
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brassL);">Grant strategy</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:6px;">"Summarize the strongest open questions in miRNA-mediated aging regulation in C. elegans after 2020. Rank them by how well-supported they are and how testable they are with our current tools."</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:6px;"><p class="body-text">→ Ranked hypothesis table with citations, evidence strength scores, and suggested experimental approaches.</p></div>
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brassL);">Mechanism mapping</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:6px;">"Map the evidence for how ALG-1 and ALG-2 produce opposing aging phenotypes. What are the proposed mechanisms? What is still unresolved?"</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:6px;"><p class="body-text">→ Mechanistic diagram in text form, evidence table, list of unresolved questions with citations.</p></div>
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brassL);">Cross-paper synthesis</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:6px;">"Compare our heat-shock recovery paper (2021) with our aging RNA-seq paper (2024). Which miRNAs appear in both contexts? What does that suggest about shared regulatory programs?"</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:6px;"><p class="body-text">→ Overlap analysis, shared gene/miRNA lists, synthesis paragraph with citations.</p></div>
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brassL);">Field positioning</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:6px;">"How does our lab's expression-not-sequence interpretation of miRNA target specificity compare to the current consensus? Who agrees, who disagrees, and what would resolve it?"</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:6px;"><p class="body-text">→ Field map with lab positions, supporting/contradicting papers, resolution experiments.</p></div>
+    </div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 07 — POSTDOC PROMPTS
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s07">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--green);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">Example Prompts — Postdocs &amp; Graduate Students</p>
+    <h2 class="title" style="margin-bottom:2px;">Daily research acceleration for every lab member</h2>
+    <div class="divider"></div>
+    <div class="grid5" style="margin-top:4px;">
+      <div class="panel" style="display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);">Experimental design</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"I'm planning a follow-up to the miR-238/239ab longevity paper. What are the three most testable hypotheses that would extend this work? What controls would be critical for each?"</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Three hypothesis cards with experimental design, controls, and relevant citations.</p></div>
+      <div class="panel" style="display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);">Literature catch-up</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"I just joined the lab. Give me a structured reading path from the foundational let-7 papers through the most recent aging work. Start with what I need to understand the 2024 NAR paper."</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Tiered reading list with annotations, estimated reading time, key concepts per paper.</p></div>
+      <div class="panel" style="display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);">Data interpretation</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"We found that transcript X has a short poly(A) tail but high translation efficiency. Is this an outlier? What mechanisms could explain it based on the PABP literature?"</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Literature-grounded interpretation, candidate mechanisms, papers to read.</p></div>
+      <div class="panel" style="display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);">Manuscript prep</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"Check the consistency between our methods section and figure legends for the heat-shock recovery paper. Flag any discrepancies in sample sizes, strain names, or statistical tests."</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Discrepancy table with line numbers and suggested corrections.</p></div>
+      <div class="panel" style="display:flex;flex-direction:column;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);">Journal club prep</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"Summarize this new paper on miRNA-mediated translational repression in 5 points. How does it relate to our lab's work? What questions should we ask the authors?"</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Summary, relevance assessment, 3–5 discussion questions.</p></div>
+    </div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 08 — OVERNIGHT RESEARCH
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s08">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--purple);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">Overnight Autonomous Research</p>
+    <h2 class="title" style="margin-bottom:2px;">Let the agent work while you sleep — wake up to structured results</h2>
+    <div class="divider"></div>
+    <div class="grid2" style="margin-top:4px;">
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);">Task 1: Literature sweep</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"Search for all papers published in the last 6 months on miRNA regulation in aging organisms. Summarize each, score relevance to our lab's work (1–10), and flag any that contradict our published findings."</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Ranked paper list · Relevance scores · Contradiction flags</p></div>
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);">Task 2: Cross-dataset replication</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"Download all public C. elegans aging RNA-seq datasets from GEO. Score each using the gene signatures from our 2024 NAR paper. Report which signatures replicate and which do not."</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Replication score table · Forest plots · Core aging marker gene set</p></div>
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);">Task 3: Target concordance</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"For let-7 and miR-238, pull predictions from TargetScan and miRDB. Cross-reference against our published functional data. Build a concordance score for each predicted target."</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Concordance-scored target table · Venn diagrams · High-confidence target shortlist</p></div>
+      <div class="panel"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);">Task 4: Hypothesis generation</span><div class="gear-sm"></div></div><p class="prompt" style="margin-bottom:5px;">"Starting from our 2021 heat-shock recovery paper, find all related papers on miRNA-mediated stress recovery. Generate 10 testable hypotheses ranked by evidence strength and experimental feasibility."</p><hr style="border:none;border-top:1px solid var(--brassD);margin-bottom:5px;"><p class="body-text">→ Ranked hypothesis board · Citations · Experimental sketches</p></div>
+    </div>
+    <div class="callout">The agent runs all four tasks in parallel overnight. By morning you have a structured research briefing, not a search results page.</div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 09 — RAG vs FINE-TUNING
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s09">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--purple);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">Technical Approach</p>
+    <h2 class="title" style="margin-bottom:2px;">Two paths to a lab-specific LLM — choose based on your goals</h2>
+    <div class="divider"></div>
+    <div style="flex:1;overflow:auto;margin-top:4px;">
+      <table>
+        <thead><tr><th>Dimension</th><th style="color:var(--green);">RAG (Retrieval-Augmented Generation)</th><th>Fine-Tuning</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600;color:var(--lgray);">Setup time</td><td style="color:#fff;">Hours to days</td><td style="color:#fff;">Days to weeks</td></tr>
+          <tr><td style="font-weight:600;color:var(--lgray);">Hardware needed</td><td style="color:#fff;">CPU or small GPU</td><td style="color:#fff;">GPU (RTX 3050 Ti sufficient)</td></tr>
+          <tr><td style="font-weight:600;color:var(--lgray);">Corpus update</td><td style="color:#fff;">Add files, re-index (minutes)</td><td style="color:#fff;">Retrain (hours)</td></tr>
+          <tr><td style="font-weight:600;color:var(--lgray);">Answers cite sources</td><td style="color:#fff;">Yes, automatically</td><td style="color:#fff;">Requires prompting</td></tr>
+          <tr><td style="font-weight:600;color:var(--lgray);">Best for</td><td style="color:#fff;">Literature Q&amp;A, hypothesis generation</td><td style="color:#fff;">Style adaptation, specialized reasoning</td></tr>
+          <tr><td style="font-weight:600;color:var(--lgray);">Cost</td><td style="color:#fff;">Near-zero (local) or low API cost</td><td style="color:#fff;">Near-zero (local)</td></tr>
+          <tr><td style="font-weight:600;color:var(--lgray);">Recommended</td><td style="color:var(--green);font-weight:700;">START HERE →</td><td style="color:var(--mgray);">Add later for specialized tasks</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px;">
+      <p class="body-text" style="font-style:italic;font-size:11px;margin-bottom:4px;"><strong style="color:var(--brassL);">RAG in plain English:</strong> The model looks up relevant passages from your corpus before answering — like giving the LLM a searchable library of your papers.</p>
+      <p class="body-text" style="font-style:italic;font-size:11px;"><strong style="color:var(--brassL);">Fine-tuning in plain English:</strong> You train the model's weights on your corpus so the knowledge is baked in. More powerful but more effort to update.</p>
+    </div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 10 — FIELD IS MOVING
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s10">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--orange);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">The Field Is Already Moving</p>
+    <h2 class="title" style="margin-bottom:2px;">Autonomous AI research is no longer speculative — it is happening now</h2>
+    <div class="divider"></div>
+    <div style="flex:1;overflow:auto;margin-top:4px;">
+      <table>
+        <thead><tr><th>System</th><th>Organization</th><th>Milestone</th><th>Relevance to Lab</th></tr></thead>
+        <tbody>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--blue);">autoresearch</span></td><td style="color:#fff;">Karpathy (2026)</td><td style="color:#fff;">Agent-driven code iteration on consumer GPU; adopted worldwide in weeks</td><td style="color:var(--mgray);font-style:italic;">Foundation of this repo</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--green);">PaperQA2</span></td><td style="color:#fff;">FutureHouse</td><td style="color:#fff;">Beats PhD researchers at biology literature search (LitQA2 benchmark)</td><td style="color:var(--mgray);font-style:italic;">Direct analog for miRNA literature work</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--teal);">ContraCrow</span></td><td style="color:#fff;">FutureHouse</td><td style="color:#fff;">Finds ~2.34 contradicted statements per biology paper</td><td style="color:var(--mgray);font-style:italic;">Contradiction finder for miRNA field</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--teal);">WikiCrow</span></td><td style="color:#fff;">FutureHouse</td><td style="color:#fff;">Gene-level summaries from 1 million papers, more accurate than Wikipedia</td><td style="color:var(--mgray);font-style:italic;">Gene-level knowledge base for C. elegans</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--purple);">AI Scientist v2</span></td><td style="color:#fff;">Sakana AI</td><td style="color:#fff;">First AI-generated paper to pass peer review at ICLR workshop</td><td style="color:var(--mgray);font-style:italic;">Full autonomous research loop</td></tr>
+          <tr><td><span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--orange);">Coscientist</span></td><td style="color:#fff;">CMU (Gomes lab)</td><td style="color:#fff;">Autonomous chemistry experiments via robotic API (Nature, 2023)</td><td style="color:var(--mgray);font-style:italic;">Closes hypothesis-to-wet-lab loop</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">The question is not whether autonomous research tools will be useful in biology labs — it is how quickly labs like the Pasquinelli lab adopt them.</div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 11 — QUICK WINS
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s11">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--green);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">Getting Started Today</p>
+    <h2 class="title" style="margin-bottom:2px;">You can have a working lab LLM agent in 48 hours</h2>
+    <div class="divider"></div>
+    <div class="grid2" style="margin-top:4px;">
+      <div class="panel">
+        <div class="panel-hdr" style="color:var(--green);">This week (hours to days)</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--green);flex-shrink:0;">1.</span><div><p class="body-text" style="color:#fff;font-weight:500;">Literature gap-finder for next grant proposal</p><p class="body-text" style="color:var(--mgray);font-style:italic;font-size:10px;">1–2 days</p></div></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--green);flex-shrink:0;">2.</span><div><p class="body-text" style="color:#fff;font-weight:500;">New-paper alert and summary service</p><p class="body-text" style="color:var(--mgray);font-style:italic;font-size:10px;">Half a day</p></div></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--green);flex-shrink:0;">3.</span><div><p class="body-text" style="color:#fff;font-weight:500;">Manuscript consistency checker</p><p class="body-text" style="color:var(--mgray);font-style:italic;font-size:10px;">Hours per manuscript</p></div></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--green);flex-shrink:0;">4.</span><div><p class="body-text" style="color:#fff;font-weight:500;">Hypothesis ranking board from a seed paper</p><p class="body-text" style="color:var(--mgray);font-style:italic;font-size:10px;">1–2 days</p></div></div>
+        <div style="display:flex;gap:8px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--green);flex-shrink:0;">5.</span><div><p class="body-text" style="color:#fff;font-weight:500;">Lab knowledge base for onboarding</p><p class="body-text" style="color:var(--mgray);font-style:italic;font-size:10px;">Ongoing, seed in hours</p></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr" style="color:var(--orange);">This month (days to weeks)</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--orange);flex-shrink:0;">1.</span><p class="body-text" style="color:#fff;">Full corpus build: all lab papers + key field papers</p></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--orange);flex-shrink:0;">2.</span><p class="body-text" style="color:#fff;">RAG-based query system: ask questions, get cited answers</p></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--orange);flex-shrink:0;">3.</span><p class="body-text" style="color:#fff;">Isoform shift analysis on 2024 aging data</p></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--orange);flex-shrink:0;">4.</span><p class="body-text" style="color:#fff;">Cross-dataset replication of aging signatures</p></div>
+        <div style="display:flex;gap:8px;"><span style="font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--orange);flex-shrink:0;">5.</span><p class="body-text" style="color:#fff;">Living hypothesis board that updates as new papers appear</p></div>
+      </div>
+    </div>
+    <div class="callout">All how-to guides, starter code, and program.md templates: amy_autoresearch_howto/ · github.com/jlpfly/Karpathy_autoresearch</div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 12 — CLOSING
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s12">
+  <div class="brass-border"></div><div class="border-top"></div><div class="border-bot"></div>
+  <div class="gear-tl"></div><div class="gear-br"></div>
+  <div class="bar-left" style="background:var(--blue);"></div><div class="bar-accent"></div>
+  <div class="rivets" style="position:absolute;top:30px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="rivets" style="position:absolute;bottom:38px;left:0;right:0;z-index:10;"><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div><div class="rivet"></div></div>
+  <div class="content">
+    <p class="label" style="margin-bottom:4px;">Closing</p>
+    <h2 class="title" style="margin-bottom:2px;">The Pasquinelli Lab is positioned to lead in AI-augmented RNA biology</h2>
+    <div class="divider"></div>
+    <div class="grid2" style="margin-top:4px;margin-bottom:8px;">
+      <div class="panel">
+        <div class="panel-hdr" style="color:var(--blue);">Why this lab, why now</div>
+        <p class="body-text" style="margin-bottom:6px;">• 25 years of publications = a rich, coherent training corpus</p>
+        <p class="body-text" style="margin-bottom:6px;">• Deep expertise in a focused domain = high-quality agent outputs</p>
+        <p class="body-text" style="margin-bottom:6px;">• Existing compute (RTX 3050 Ti) = no new hardware needed</p>
+        <p class="body-text">• Active hiring in non-coding RNA = new members benefit immediately</p>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr" style="color:var(--green);">What the agent amplifies</div>
+        <p class="body-text" style="margin-bottom:6px;">• Literature coverage: reads faster and more consistently than any human</p>
+        <p class="body-text" style="margin-bottom:6px;">• Hypothesis generation: surfaces connections across hundreds of papers</p>
+        <p class="body-text" style="margin-bottom:6px;">• Institutional memory: new lab members up to speed in days, not months</p>
+        <p class="body-text">• Grant preparation: structures evidence and identifies gaps systematically</p>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:8px;">
+      <div class="panel-hdr" style="color:var(--brassL);">What the agent cannot replace</div>
+      <p class="body-text">Experimental creativity and biological intuition · Wet-lab execution and troubleshooting · Peer relationships and collaboration · The judgment to know which question matters</p>
+    </div>
+    <div class="panel bpulse" style="text-align:center;padding:16px;">
+      <div class="divider"></div>
+      <blockquote style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;font-style:italic;color:var(--gold);margin:8px 0;">
+        "The era of AI-augmented biology is here. The Pasquinelli Lab has the corpus, the compute, and the questions. The only remaining step is to build the agent."
+      </blockquote>
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:10px;">
+        <a href="https://github.com/jlpfly/Karpathy_autoresearch/tree/Amy_Autoresearch" target="_blank" style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);transition:opacity .2s;">→ GitHub Repository</a>
+        <a href="https://pasquinellilab.biosci.ucsd.edu" target="_blank" style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);transition:opacity .2s;">→ Pasquinelli Lab</a>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">Pasquinelli Lab AI Research Agent · github.com/jlpfly/Karpathy_autoresearch · Amy_Autoresearch branch</div>
+</section>
+
+<!-- ── JAVASCRIPT ──────────────────────────────────────────────────────────── -->
+<script>
+const SLIDES = [
+  {id:'s01',label:'Title'},
+  {id:'s02',label:'The Vision'},
+  {id:'s03',label:'Architecture'},
+  {id:'s04',label:'How to Build It'},
+  {id:'s05',label:'The Corpus'},
+  {id:'s06',label:"Amy's Prompts"},
+  {id:'s07',label:'Postdoc Prompts'},
+  {id:'s08',label:'Overnight Research'},
+  {id:'s09',label:'RAG vs Fine-Tuning'},
+  {id:'s10',label:'Field Is Moving'},
+  {id:'s11',label:'Quick Wins'},
+  {id:'s12',label:'Closing'},
+];
+
+// Build navigator dots
+const nav = document.getElementById('nav');
+SLIDES.forEach((s,i)=>{
+  const d = document.createElement('button');
+  d.className = 'dot';
+  d.setAttribute('aria-label',`Slide ${i+1}: ${s.label}`);
+  d.innerHTML = `<span class="tip">${i+1}. ${s.label}</span>`;
+  d.addEventListener('click',()=>document.getElementById(s.id).scrollIntoView({behavior:'smooth'}));
+  nav.appendChild(d);
+});
+
+// Active dot tracking
+const dots = nav.querySelectorAll('.dot');
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const idx = SLIDES.findIndex(s=>s.id===e.target.id);
+      if(idx>=0){dots.forEach(d=>d.classList.remove('active'));dots[idx].classList.add('active');}
+    }
+  });
+},{threshold:0.5});
+SLIDES.forEach(s=>{const el=document.getElementById(s.id);if(el)observer.observe(el);});
+
+// Keyboard navigation
+window.addEventListener('keydown',e=>{
+  const cur = SLIDES.findIndex(s=>{
+    const el=document.getElementById(s.id);
+    if(!el)return false;
+    const r=el.getBoundingClientRect();
+    return r.top>=-50&&r.top<window.innerHeight/2;
+  });
+  if(e.key==='ArrowDown'||e.key==='PageDown'){
+    e.preventDefault();
+    const n=Math.min(cur+1,SLIDES.length-1);
+    document.getElementById(SLIDES[n].id).scrollIntoView({behavior:'smooth'});
+  }else if(e.key==='ArrowUp'||e.key==='PageUp'){
+    e.preventDefault();
+    const p=Math.max(cur-1,0);
+    document.getElementById(SLIDES[p].id).scrollIntoView({behavior:'smooth'});
+  }
+});
+
+// Fade-up on scroll entry
+const fuObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.panel,.callout,table').forEach((el,i)=>{
+        el.style.opacity='0';el.style.transform='translateY(18px)';
+        setTimeout(()=>{
+          el.style.transition='opacity .45s ease, transform .45s ease';
+          el.style.opacity='1';el.style.transform='translateY(0)';
+        },i*90);
+      });
+      fuObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.15});
+SLIDES.forEach(s=>{const el=document.getElementById(s.id);if(el)fuObs.observe(el);});
+</script>
+</body>
+</html>
