@@ -11,6 +11,7 @@ os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 import gc
 import importlib.util
 import math
+import sys
 import time
 from dataclasses import dataclass, asdict
 
@@ -541,6 +542,49 @@ def get_muon_momentum(step):
 def get_weight_decay(progress):
     return WEIGHT_DECAY * (1 - progress)
 
+
+LIVE_PROGRESS_EXPLAINERS = [
+    "study round",
+    "run done",
+    "wrongness",
+    "learning pace",
+    "time for 1 study",
+    "text speed",
+    "GPU busy",
+    "data lap",
+    "time left",
+]
+
+
+def format_progress_lines(step, pct_done, train_loss, lrm, dt_ms, tok_per_sec, mfu, epoch, remaining):
+    metric_segments = [
+        f"step: {step:05d}",
+        f"done: {pct_done:5.1f}%",
+        f"loss: {train_loss:8.6f}",
+        f"lrm: {lrm:4.2f}",
+        f"dt: {dt_ms:4.0f}ms",
+        f"tok/sec: {tok_per_sec:>7,}",
+        f"mfu: {mfu:4.1f}%",
+        f"epoch: {epoch}",
+        f"remaining: {remaining:3.0f}s",
+    ]
+    widths = [max(len(metric), len(explainer)) for metric, explainer in zip(metric_segments, LIVE_PROGRESS_EXPLAINERS)]
+    metrics_line = " | ".join(metric.ljust(width) for metric, width in zip(metric_segments, widths))
+    explainer_line = " | ".join(explainer.ljust(width) for explainer, width in zip(LIVE_PROGRESS_EXPLAINERS, widths))
+    return metrics_line, explainer_line
+
+
+def render_progress(metrics_line, explainer_line, live_progress_started):
+    if sys.stdout.isatty():
+        if live_progress_started:
+            sys.stdout.write("\x1b[2A")
+        sys.stdout.write(f"\r\x1b[2K{metrics_line}\n\r\x1b[2K{explainer_line}\n")
+        sys.stdout.flush()
+        return True
+
+    print(f"\r{metrics_line}    ", end="", flush=True)
+    return live_progress_started
+
 # ---------------------------------------------------------------------------
 # Training loop
 # ---------------------------------------------------------------------------
@@ -549,6 +593,7 @@ t_start_training = time.time()
 smooth_train_loss = 0
 total_training_time = 0
 step = 0
+live_progress_started = False
 
 while True:
     torch.cuda.synchronize()
@@ -597,7 +642,18 @@ while True:
     mfu = 100 * num_flops_per_token * TOTAL_BATCH_SIZE / dt / H100_BF16_PEAK_FLOPS
     remaining = max(0, TIME_BUDGET - total_training_time)
 
-    print(f"\rstep {step:05d} ({pct_done:.1f}%) | loss: {debiased_smooth_loss:.6f} | lrm: {lrm:.2f} | dt: {dt*1000:.0f}ms | tok/sec: {tok_per_sec:,} | mfu: {mfu:.1f}% | epoch: {epoch} | remaining: {remaining:.0f}s    ", end="", flush=True)
+    metrics_line, explainer_line = format_progress_lines(
+        step,
+        pct_done,
+        debiased_smooth_loss,
+        lrm,
+        dt * 1000,
+        tok_per_sec,
+        mfu,
+        epoch,
+        remaining,
+    )
+    live_progress_started = render_progress(metrics_line, explainer_line, live_progress_started)
 
     # GC management (Python's GC causes ~500ms stalls)
     if step == 0:
@@ -613,7 +669,8 @@ while True:
     if step > 10 and total_training_time >= TIME_BUDGET:
         break
 
-print()  # newline after \r training log
+if not sys.stdout.isatty():
+    print()  # newline after \r training log
 
 total_tokens = step * TOTAL_BATCH_SIZE
 

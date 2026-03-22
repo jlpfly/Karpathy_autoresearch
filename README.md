@@ -18,6 +18,12 @@ By design, training runs for a **fixed 5-minute time budget** (wall clock, exclu
 
 If you are new to neural networks, this ["Dummy's Guide"](https://x.com/hooeem/status/2030720614752039185) looks pretty good for a lot more context.
 
+If you want a plain-English explanation of the terminal output from `uv run train.py`, see [TRAINING_OUTPUT_EXPLAINED.md](TRAINING_OUTPUT_EXPLAINED.md).
+
+If you want a consolidated guide that combines the updated two-line training display with a domain-specific autoresearch example for the NSP2/miRNA repression paper, see [NSP2_AUTORESEARCH_README.md](NSP2_AUTORESEARCH_README.md).
+
+If you want a Pasquinelli Lab-focused guide built from the publication list with an emphasis on 2020+ papers plus easy computational deployment ideas, see [PASQUINELLI_AUTORESEARCH_README.md](PASQUINELLI_AUTORESEARCH_README.md).
+
 ## Windows setup and 5-minute validation on this laptop
 
 This working tree is currently tuned for the laptop I am using:
